@@ -116,9 +116,7 @@ router.delete('/photo/:id', function(req, res) {
                 }
                 if (result.rowCount >= 1) {
                     var photo = result.rows[0];
-
                     var photopath = getAbsoluteFolder() + photo.id + "." + photo.oldfile.split('.').pop();
-                    console.log(photopath);
                     fs.unlink(photopath, function(err) {
                         if (err) {
                             console.log('Failed to delete ' + photopath);
@@ -141,5 +139,56 @@ router.delete('/photo/:id', function(req, res) {
             });
     });
 
+});
+
+router.put('/photo/:id', function (req, res) {
+    res.writeHead(200, {'content-type': 'text/plain'});
+    var form = new formidable.IncomingForm();
+    form.uploadDir = getAbsoluteFolder();
+    form.keepExtensions = true;
+    form.parse(req, function(err, fields, files) {
+
+        pg.connect(conString, function (err, client, done) {
+            if (err) {
+                res.end('error fetching client from pool');
+                return;
+            }
+            /*
+             http://stackoverflow.com/questions/7923237/return-pre-update-column-values-using-sql-only-postgresql-version
+             */
+            //client.query('UPDATE photo SET title = $1, oldfile = $2 WHERE id = $3',
+            //Hàm này để vừa cập nhật vừa trả về giá trị oldfile trước khi cập nhật.
+            client.query('UPDATE photo x SET title = $1, oldfile = $2 ' +
+                'FROM (SELECT id, oldfile FROM photo WHERE id = $3 FOR UPDATE) y ' +
+                'WHERE x.id = y.id ' +
+                'RETURNING y.oldfile',
+                [fields.title, files.photo.name, req.params.id], function (err, result) {
+                    done();
+                    if (err) {
+                        res.end('error when update new actor');
+                    } else {
+                        var oldfile = result.rows[0].oldfile;
+                        //Get return ID from request param
+                        var oldPath = form.uploadDir +  req.params.id + "." + oldfile.split('.').pop();
+                        //Remove old file
+                        fs.unlink(oldPath, function(err) {
+                            if (err) {
+                                console.log('Failed to delete ' + oldPath);
+                            }
+                        });
+                        //rename new uploaded file to correct path
+                        var newPath = form.uploadDir +  req.params.id + "." + files.photo.name.split('.').pop();
+                        fs.rename(files.photo.path, newPath, function (err) {
+                            if (err) {
+                                res.end('cannot rename file ' + files.photo.path);
+                            }
+                        });
+                        res.end('done');
+                    }
+                });
+        });
+
+        res.end('Done');
+    });
 });
 module.exports = router;
