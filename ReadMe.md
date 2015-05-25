@@ -12,4 +12,12 @@ PhotoBook has two parts:
 
 #To set up
 Server part require Postgresql to power. You need to install Postgresql server then create database named 'photobook'
+create a simple table using this code
+`CREATE TABLE photo
+(
+  id serial PRIMARY KEY, -- Primary key
+  title character varying(255) NOT NULL,
+  oldfile character varying(255) NOT NULL
+);`
+https://github.com/TechMaster/photobook/blob/master/Server/photobook/SQL/tables.sql
 

@@ -1,4 +1,3 @@
-
 CREATE TABLE photo
 (
   id serial PRIMARY KEY, -- Primary key
