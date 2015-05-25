@@ -7,7 +7,7 @@ const conString = "postgres://tom:123456@127.0.0.1/photobook";
 const pg = require('pg');
 const fs = require('fs');
 
-const formidable = require('formidable'), http = require('http'), util = require('util');
+const formidable = require('formidable');
 
 //Return absolute path of folder that stores uploaded photos
 function getAbsoluteFolder() {
@@ -27,7 +27,7 @@ router.get('/photo', function (req, res) {
             res.end('error fetching client from pool');
             return;
         }
-        client.query('SELECT id, title, path FROM photo;',
+        client.query('SELECT id, title, oldfile FROM photo;',
             function (err, result) {
                 done();
                 if (err) {
@@ -98,7 +98,6 @@ router.get('/photo/:id', function(req, res) {
             });
     });
 
-
 });
 
 router.delete('/photo/:id', function(req, res) {
@@ -132,7 +131,7 @@ router.delete('/photo/:id', function(req, res) {
 
         client.query('DELETE FROM photo WHERE id = ($1);',
             [req.params.id],
-            function(err, result) {
+            function(err) {
                 done();
                 if (err) {
                     res.end('Cannot delete photo');
